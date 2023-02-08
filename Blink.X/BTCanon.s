@@ -152,7 +152,14 @@ CYCLE_G_1:
     POP	W3
     POP	W5
     RETURN	
-	
+
+IGNITE:
+    COM PORTC
+    MOV #5000, W5
+    CALL DELAY_G_ms
+    COM PORTC
+    BRA reset_uart
+    
 _wreg_init:
     CLR W0
     CLR W1
@@ -164,6 +171,7 @@ _wreg_init:
     CLR W7
     CLR W8
     CLR W9
+    CLR W11
     MOV W7, W14
     REPEAT #12
     MOV W7, [++W14]
@@ -236,6 +244,10 @@ __U1RXInterrupt:
     ; Recibo 8 bits
     ; El bit de la izquierda es el sentido, los 7 bits de la derecha es el valor de rotacion
     MOV U1RXREG, W9
+    MOV #255, W11
+    CP W11, W9
+    BRA Z, IGNITE
+    
     MOV W9, W6
     MOV W9, W7
     AND #127, W6 ; W6 Valor de rotacion
@@ -257,8 +269,9 @@ __U1RXInterrupt:
     
     MOV W6, U1TXREG
     
-    BCLR  IFS0, #U1RXIF	    ;the user must clear the interrupt flag
-    BCLR  IFS0, #U1TXIF	    ;the user must clear the interrupt flag
+    reset_uart:
+	BCLR  IFS0, #U1RXIF	    ;the user must clear the interrupt flag
+	BCLR  IFS0, #U1TXIF	    ;the user must clear the interrupt flag
     
     RETFIE
     
